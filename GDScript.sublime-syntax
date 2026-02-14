@@ -274,8 +274,19 @@ contexts:
   square-brackets:
     - match: '\['
       scope: punctuation.section.brackets.begin.gdscript
+      push: square-brackets-body
+
+  square-brackets-body:
+    - meta_scope: meta.brackets.gdscript
     - match: '\]'
       scope: punctuation.section.brackets.end.gdscript
+      pop: true
+    - include: expressions
+    - match: ','
+      scope: punctuation.separator.sequence.gdscript
+    - include: square-brackets
+    - include: constants
+    - include: objects
 
   double-quoted-strings:
     - match: \"""
@@ -331,18 +342,10 @@ contexts:
       scope: punctuation.separator.mapping.key-value.gdscript
       set: dictionary-values
     - match: ','
-      scope: punctuation.separator.mapping.key-value.gdscript      
-    - match: (?=\S)
-      set:
-        - meta_scope: meta.mapping.key.gdscript
-        - match: '{{identifier}}(?=\s*=)'
-          set: dictionary-keys
-        - match: '{{identifier}}(?=\s*[,}\n])'
-          scope: entity.name.enum.gdscript
-          set: dictionary-keys
-        - match: (?=\s*[:=])
-          set: dictionary-keys
-        - include: expressions
+      scope: punctuation.separator.mapping.key-value.gdscript
+    - match: '{{identifier}}(?=\s*[,}\n])'
+      scope: entity.name.enum.gdscript
+    - include: expressions
 
   dictionary-values:
     - meta_scope: meta.mapping.gdscript
@@ -350,13 +353,10 @@ contexts:
     - match: ','
       scope: punctuation.separator.mapping.gdscript
       set: dictionary-keys
-    - match: (?=\S)
-      set:
-        - meta_scope: meta.mapping.value.gdscript
-        - include: dictionary-close-pop
-        - match: (?=\s*,)
-          set: dictionary-values
-        - include: expressions
+    - include: expressions
+    - include: square-brackets
+    - include: constants
+    - include: objects
 
   dictionary-close-pop:
     - match: '\s*(})'
@@ -365,15 +365,14 @@ contexts:
       pop: true
 
   function-calls:
-    - match: '{{identifier}}\s*(?=\()'
+    - match: '{{identifier}}(?=\s*\()'
       scope: meta.function-call.gdscript variable.function.gdscript
     - match: (?=\()
-      push:
-        - meta_scope: meta.function-call.arguments.gdscript
-        - include: arguments-list
-        - include: square-brackets
-        - include: constants
-        - include: objects
+      push: function-call-arguments
+
+  function-call-arguments:
+    - meta_scope: meta.function-call.arguments.gdscript
+    - include: arguments-list
 
   yields:
     - match: \byield\b
@@ -389,16 +388,17 @@ contexts:
     - match: \(
       scope: punctuation.section.arguments.begin.gdscript
     - include: expressions
+    - include: square-brackets
     - match: ','
       scope: punctuation.separator.arguments.gdscript
     - match: '\b(self)\b'
       scope: keyword.self
-    - match: \btrue|false|null\b
-      scope: constant.language.gdscript
     - match: '\$\b[a-zA-Z0-9\\_]+\b'
       scope: comment.node.dollar-node
     - match: '%\b\w+\b'
       scope: comment.node.percentage-node
+    - include: constants
+    - include: objects
     - match: \)
       scope: punctuation.section.arguments.end.gdscript
       pop: true
