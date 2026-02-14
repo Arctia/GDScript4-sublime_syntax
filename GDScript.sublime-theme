@@ -1,0 +1,9 @@
+[
+    {
+        "class": "icon_file_type",
+        "parents": [{"class": "tree_row", "attributes": ["extension.gd"]}],
+        "layer0.texture": "User/godot.png",
+        "layer0.opacity": 1.0,
+        "content_margin": [8, 8]
+    }
+]

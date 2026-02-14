@@ -12,6 +12,8 @@
 				<string>keyword.control.region.begin</string>
 				<key>end</key>
 				<string>keyword.control.region.end</string>
+				<key>excludeTrailingNewlines</key>
+                <false/>
 			</dict>
 		</array>
 	</dict>

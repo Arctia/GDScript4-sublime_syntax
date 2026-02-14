@@ -239,7 +239,3 @@ $Object1234/node2
 
 func state(username:String = "parameter", ) -> void:
     pass
-
-var area: Area2D
-
-area.set_density

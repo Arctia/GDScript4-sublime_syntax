@@ -1,0 +1,70 @@
+%YAML 1.2
+---
+name: Godot Scene
+file_extensions:
+  - tscn
+  - tres
+scope: source.godot
+
+contexts:
+  main:
+    - match: '^\['
+      scope: punctuation.section.brackets.begin.godot
+      push: inside_brackets
+    
+    - match: '^\s*([\w/]+)\s*(=)'
+      captures:
+        1: variable.parameter.godot
+        2: keyword.operator.assignment.godot
+      push: value_content
+    
+    - match: '#.*$'
+      scope: comment.line.godot
+
+  inside_brackets:
+    - match: '\]'
+      scope: punctuation.section.brackets.end.godot
+      pop: true
+    
+    - match: '\b(gd_resource|gd_scene|ext_resource|sub_resource|resource|node|connection)\b'
+      scope: storage.type.godot
+    
+    - match: '\b(type|script_class|load_steps|format|uid|script|path|id|name|parent|instance)\b'
+      scope: variable.parameter.godot
+    
+    - match: '='
+      scope: keyword.operator.assignment.godot
+    
+    - match: '"[^"]*"'
+      scope: string.quoted.double.godot
+    
+    - match: '\b\d+\b'
+      scope: constant.numeric.godot
+    
+    - match: '\b(Resource|Script|PackedScene|Texture2D|AudioStream|Button|Node|Control)\b'
+      scope: support.class.godot
+
+  value_content:
+    - match: '\b(ExtResource|SubResource|Color|Vector2|Vector3|Rect2|Transform2D)\b'
+      scope: support.function.godot
+    
+    - match: '"'
+      scope: punctuation.definition.string.begin.godot
+      push: double_quoted_string
+    
+    - match: '\b(-?\d+\.?\d*)\b'
+      scope: constant.numeric.godot
+    
+    - match: '\b(true|false|null)\b'
+      scope: constant.language.godot
+    
+    - match: '$'
+      pop: true
+
+  double_quoted_string:
+    - meta_scope: string.quoted.double.godot
+    - match: '\\.'
+      scope: constant.character.escape.godot
+    - match: '"'
+      scope: punctuation.definition.string.end.godot
+      pop: true
