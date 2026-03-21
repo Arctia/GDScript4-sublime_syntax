@@ -235,7 +235,7 @@ enum TEST {
 yield
 await
 signal mysignal
-( false, %ciao, $Object/node34, self.me, true) true
+( false, %ciao, $Object/node34, self.me, true, [asdf, false], "asdf", PI, TAU, NAN, INF) true
 
 
 signal foo
@@ -250,7 +250,7 @@ signal foo(bar, baz)
 #          ^^^ variable.parameter.gdscript
 #             ^ punctuation.separator.parameters.gdscript
 signal foo \
-()
+(foo,bar)
 # < meta.signal.parameters.gdscript
 
 @onready var myname:String = "name" 
