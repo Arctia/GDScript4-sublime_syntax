@@ -56,6 +56,12 @@ contexts:
       pop: true
     - include: main
 
+  comments:
+    - match: (#)(?!region|endregion).*
+      scope: comment.line.number-sign.gdscript
+      captures:
+        1: punctuation.definition.comment.number-sign.gdscript
+
   docstrings:
     - match: ^\s*(""")
       captures:
@@ -79,7 +85,7 @@ contexts:
     - include: dictionaries
     - include: control-flow
     - include: operators
-    - include: yields
+    - include: yield-expressions
     - include: function-calls
     - include: node-paths
     - include: square-brackets
@@ -150,6 +156,135 @@ contexts:
       scope: keyword.operator.comparison.gdscript
     - match: '\+=|-=|\*=|/=|%=|&=|\|=|\*|/|% |\+|-|<<|>>|&|\||\^|~'
       scope: keyword.operator.arithmetic.gdscript
+
+  square-brackets:
+    - match: '\['
+      scope: punctuation.section.brackets.begin.gdscript
+      push: square-brackets-body
+
+  square-brackets-body:
+    - meta_scope: meta.brackets.gdscript
+    - match: '\]'
+      scope: punctuation.section.brackets.end.gdscript
+      pop: true
+    - include: expressions
+    - match: ','
+      scope: punctuation.separator.sequence.gdscript
+
+  # TODO: Raw strings
+  double-quoted-strings:
+    - match: \"""
+      scope: punctuation.definition.string.begin.gdscript
+      push:
+        - meta_scope: meta.string.gdscript string.quoted.double.block.gdscript
+        - meta_include_prototype: false
+        - include: character-escapes
+        - match: \"""
+          scope: punctuation.definition.string.end.gdscript
+          pop: true
+    - match: \"
+      scope: punctuation.definition.string.begin.gdscript
+      push:
+        - meta_scope: meta.string.gdscript string.quoted.double.gdscript
+        - meta_include_prototype: false
+        - include: character-escapes
+        - match: \"
+          scope: punctuation.definition.string.end.gdscript
+          pop: true
+
+  single-quoted-strings:
+    - match: \'
+      scope: punctuation.definition.string.begin.gdscript
+      push:
+        - meta_scope: meta.string.gdscript string.quoted.single.gdscript
+        - meta_include_prototype: false
+        - include: character-escapes
+        - match: \'
+          scope: punctuation.definition.string.end.gdscript
+          pop: true
+
+  node-path-strings:
+    - match: '\^"'
+      push:
+        - meta_scope: string.quoted.double.node-path.gdscript
+        - match: '(?<!\\)"'
+          pop: true
+    - match: '\$"'
+      push:
+        - meta_scope: entity.name.node.gdscript
+        - match: '(?<!\\)"'
+          pop: true
+    - match: '\%"'
+      push:
+        - meta_scope: entity.name.node.gdscript
+        - match: '(?<!\\)"'
+          pop: true
+
+  string-name-strings:
+    - match: '\&"'
+      push:
+        - meta_scope: string.quoted.double.string-name.gdscript
+        - match: (?<!\\)"
+          pop: true
+
+  character-escapes:
+    - match: \\["'\\]
+      scope: constant.character.escape.gdscript
+
+  dictionaries:
+    - match: '{'
+      scope: punctuation.section.mapping.begin.gdscript
+      push: dictionary-keys
+
+  dictionary-keys:
+    - meta_scope: meta.mapping.gdscript
+    - include: dictionary-close-pop
+    - match: '[:=]'
+      scope: punctuation.separator.mapping.key-value.gdscript
+      set: dictionary-values
+    - match: ','
+      scope: punctuation.separator.mapping.key-value.gdscript
+    - match: '{{identifier}}(?=\s*[,}\n])'
+      scope: entity.name.enum.gdscript
+    - include: expressions
+
+  dictionary-values:
+    - meta_scope: meta.mapping.gdscript
+    - include: dictionary-close-pop
+    - match: ','
+      scope: punctuation.separator.mapping.gdscript
+      set: dictionary-keys
+    - include: expressions
+
+  dictionary-close-pop:
+    - match: '\s*(})'
+      captures:
+        1: punctuation.section.mapping.end.gdscript
+      pop: true
+
+  function-calls:
+    - match: '{{identifier}}(?=\s*\()'
+      scope: meta.function-call.gdscript variable.function.gdscript
+      push: function-call-arguments
+
+  function-call-arguments:
+    - meta_scope: meta.function-call.arguments.gdscript
+    - match: \(
+      scope: punctuation.section.arguments.begin.gdscript
+    - include: expressions
+    - match: ','
+      scope: punctuation.separator.arguments.gdscript
+    - match: \)
+      scope: punctuation.section.arguments.end.gdscript
+      pop: true
+
+  yield-expressions:
+    - match: \byield\b
+      scope: keyword.control.flow.yield.gdscript
+      set:
+        - match: (?=\()
+          set: function-call-arguments
+        - include: immediately-pop
 
   ### [ Script-level meta-declarations ] #########################################################################
 
@@ -306,140 +441,6 @@ contexts:
       captures:
         1: storage.type.enum.gdscript
         2: entity.name.type.gdscript
-
-  comments:
-    - match: (#)(?!region|endregion).*
-      scope: comment.line.number-sign.gdscript
-      captures:
-        1: punctuation.definition.comment.number-sign.gdscript
-
-  square-brackets:
-    - match: '\['
-      scope: punctuation.section.brackets.begin.gdscript
-      push: square-brackets-body
-
-  square-brackets-body:
-    - meta_scope: meta.brackets.gdscript
-    - match: '\]'
-      scope: punctuation.section.brackets.end.gdscript
-      pop: true
-    - include: expressions
-    - match: ','
-      scope: punctuation.separator.sequence.gdscript
-
-  double-quoted-strings:
-    - match: \"""
-      scope: punctuation.definition.string.begin.gdscript
-      push:
-        - meta_scope: meta.string.gdscript string.quoted.double.block.gdscript
-        - meta_include_prototype: false
-        - include: character-escapes
-        - match: \"""
-          scope: punctuation.definition.string.end.gdscript
-          pop: true
-    - match: \"
-      scope: punctuation.definition.string.begin.gdscript
-      push:
-        - meta_scope: meta.string.gdscript string.quoted.double.gdscript
-        - meta_include_prototype: false
-        - include: character-escapes
-        - match: \"
-          scope: punctuation.definition.string.end.gdscript
-          pop: true
-
-  single-quoted-strings:
-    - match: \'
-      scope: punctuation.definition.string.begin.gdscript
-      push:
-        - meta_scope: meta.string.gdscript string.quoted.single.gdscript
-        - meta_include_prototype: false
-        - include: character-escapes
-        - match: \'
-          scope: punctuation.definition.string.end.gdscript
-          pop: true
-
-  node-path-strings:
-    - match: '\^"'
-      push:
-        - meta_scope: string.quoted.double.node-path.gdscript
-        - match: '(?<!\\)"'
-          pop: true
-    - match: '\$"'
-      push:
-        - meta_scope: entity.name.node.gdscript
-        - match: '(?<!\\)"'
-          pop: true
-    - match: '\%"'
-      push:
-        - meta_scope: entity.name.node.gdscript
-        - match: '(?<!\\)"'
-          pop: true
-
-  string-name-strings:
-    - match: '\&"'
-      push:
-        - meta_scope: string.quoted.double.string-name.gdscript
-        - match: (?<!\\)"
-          pop: true
-
-  character-escapes:
-    - match: \\["'\\]
-      scope: constant.character.escape.gdscript
-
-  dictionaries:
-    - match: '{'
-      scope: punctuation.section.mapping.begin.gdscript
-      push: dictionary-keys
-
-  dictionary-keys:
-    - meta_scope: meta.mapping.gdscript
-    - include: dictionary-close-pop
-    - match: '[:=]'
-      scope: punctuation.separator.mapping.key-value.gdscript
-      set: dictionary-values
-    - match: ','
-      scope: punctuation.separator.mapping.key-value.gdscript
-    - match: '{{identifier}}(?=\s*[,}\n])'
-      scope: entity.name.enum.gdscript
-    - include: expressions
-
-  dictionary-values:
-    - meta_scope: meta.mapping.gdscript
-    - include: dictionary-close-pop
-    - match: ','
-      scope: punctuation.separator.mapping.gdscript
-      set: dictionary-keys
-    - include: expressions
-
-  dictionary-close-pop:
-    - match: '\s*(})'
-      captures:
-        1: punctuation.section.mapping.end.gdscript
-      pop: true
-
-  function-calls:
-    - match: '{{identifier}}(?=\s*\()'
-      scope: meta.function-call.gdscript variable.function.gdscript
-      push: function-call-arguments
-
-  function-call-arguments:
-    - meta_scope: meta.function-call.arguments.gdscript
-    - match: \(
-      scope: punctuation.section.arguments.begin.gdscript
-    - include: expressions
-    - match: ','
-      scope: punctuation.separator.arguments.gdscript
-    - match: \)
-      scope: punctuation.section.arguments.end.gdscript
-      pop: true
-
-  yields:
-    - match: \byield\b
-      scope: keyword.control.flow.yield.gdscript
-      set:
-        - match: (?=\()
-          set: function-call-arguments
-        - include: immediately-pop
 
   ### [ General Purpose ] #########################################################################
 

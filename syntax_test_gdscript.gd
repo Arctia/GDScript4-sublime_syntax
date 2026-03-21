@@ -296,7 +296,7 @@ class_name Weeeee
 extends Node3D
 
 function_call(asdf(), asdf, "")
-foo.bar.function_call(asdf(), asdf, "")
+self.bar.function_call(asdf(), asdf[5], self.foo(), "")
 
 func function(hello = asdf(), asdf = ""):
     pass
