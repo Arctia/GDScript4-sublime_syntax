@@ -8,6 +8,7 @@ scope: source.gdscript
 
 variables:
   identifier: '\b[a-zA-Z_][a-zA-Z_0-9]*\b'
+  node_path_segment: '%?{{identifier}}'
   catch_all: '(?=\S)'
 
 contexts:
@@ -74,7 +75,7 @@ contexts:
   expressions:
     - include: literals
     - include: builtin-types
-    - include: constants
+    - include: language-constants
     - include: dictionaries
     - include: control-flow
     - include: operators
@@ -105,44 +106,28 @@ contexts:
 
   node-paths:
     - meta_scope: meta.path.gdscript
-    - match: '\$[a-zA-Z_][a-zA-Z0-9_]*(?:/[a-zA-Z_][a-zA-Z0-9_]*)*'
-      scope: entity.name.dollar-node.gdscript
-    - match: '\%[a-zA-Z_][a-zA-Z0-9_]*(?:/[a-zA-Z_][a-zA-Z0-9_]*)*'
-      scope: entity.name.percentage-node.gdscript
-    - match: '@\b\w+\b'
-      scope: keyword.at-sign.gdscript
+    - match: '\$/?{{node_path_segment}}(?:/{{node_path_segment}})*'
+      scope: entity.name.node.gdscript
+    - match: '\%{{identifier}}(?:/{{node_path_segment}})*'
+      scope: entity.name.node.gdscript
 
   literals:
     - include: strings
-    - include: numbers
-    - include: booleans-and-null
+    - include: scope:source.python#numbers
 
-  constants:
+  language-constants:
     - match: '\b(self)\b'
       scope: variable.language.gdscript
     - match: '\b(PI|TAU|INF|NAN)\b'
+      scope: constant.language.gdscript
+    - match: '\b(true|false|null)\b'
       scope: constant.language.gdscript
 
   strings:
     - include: double-quoted-strings
     - include: single-quoted-strings
     - include: node-path-strings
-
-  numbers:
-    - match: \b(?i:0x\h*)\b
-      scope: constant.numeric.integer.hexadecimal.gdscript
-    - match: '\b(?i:(\d+\.\d*(e[\-\+]?\d+)?))\b'
-      scope: constant.numeric.float.gdscript
-    - match: '\b(?i:(\.\d+(e[\-\+]?\d+)?))\b'
-      scope: constant.numeric.float.gdscript
-    - match: '\b(?i:(\d+e[\-\+]?\d+))\b'
-      scope: constant.numeric.float.gdscript
-    - match: \b\d+\b
-      scope: constant.numeric.integer.gdscript
-
-  booleans-and-null:
-    - match: '\b(true|false|null)\b'
-      scope: constant.language.gdscript
+    - include: string-name-strings
 
   builtin-types:
     - match: '\b(?:void|bool|int|float|String|funcref)\b'
@@ -374,9 +359,26 @@ contexts:
           pop: true
 
   node-path-strings:
-    - match: '@"'
+    - match: '\^"'
       push:
         - meta_scope: string.quoted.double.node-path.gdscript
+        - match: '(?<!\\)"'
+          pop: true
+    - match: '\$"'
+      push:
+        - meta_scope: entity.name.node.gdscript
+        - match: '(?<!\\)"'
+          pop: true
+    - match: '\%"'
+      push:
+        - meta_scope: entity.name.node.gdscript
+        - match: '(?<!\\)"'
+          pop: true
+
+  string-name-strings:
+    - match: '\&"'
+      push:
+        - meta_scope: string.quoted.double.string-name.gdscript
         - match: (?<!\\)"
           pop: true
 

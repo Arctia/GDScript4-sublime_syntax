@@ -49,6 +49,13 @@ var x = """ \""" """
 # <- constant.numeric.integer.gdscript
 #    ^ punctuation.definition.comment.number-sign.gdscript
 
+0x12ff
+0b1001
+3.512
+10.0e-10
+
+123_123
+
 
 func foo(): pass
 # <- storage.type.function.gdscript
@@ -258,10 +265,17 @@ signal foo \
 
 @warning_ignore("integer_division")
 
+# Valid
 $Object1234/node2
 %Object1234
-$/Root/path
-%/Root/path
+$/Root/%path
+$"../Root"
+$%Root
+$/%Root
+
+# Invalid
+%$Root
+%/Root/%path
 
 &"String name"
 ^"Node/Path"
