@@ -1,6 +1,7 @@
 %YAML 1.2
 ---
 name: GDScript (Godot Engine)
+version: 2
 file_extensions:
   - gd
 scope: source.gdscript
@@ -27,10 +28,10 @@ contexts:
 
   fallback-object-names:
     - match: '\b([A-Z][a-zA-Z0-9_]*)\b'
-      scope: entity.name.other.gdscript
+      scope: storage.type.gdscript
 
   fallback-named-constants:
-    - match: '\b([A-Z0-9_]*)\b'
+    - match: '\b([A-Z0-9_]+)\b'
       scope: constant.other.gdscript
 
   folding-regions:
@@ -90,8 +91,16 @@ contexts:
     - include: signals
     - include: variable-declarations
 
+  expect-type-name:
+    - include: builtin-types
+    - include: fallback-object-names
+    - include: square-brackets # array types
+    - match: '{{identifier}}' # fallback
+      scope: storage.type.gdscript
+    - include: else-pop
+
   keywords:
-    - match: '\b(self|class_name|await|var|const|extends|enum|export|setget|tool|static|remote|sync|master|slave)\b'
+    - match: '\b(await|var|const|extends|enum|export|setget|tool|static|remote|sync|master|slave)\b'
       scope: keyword.other.gdscript
 
   node-paths:
@@ -112,7 +121,7 @@ contexts:
     - match: '\b(self)\b'
       scope: variable.language.gdscript
     - match: '\b(PI|TAU|INF|NAN)\b'
-      scope: constant.numeric.value.gdscript
+      scope: constant.language.gdscript
 
   strings:
     - include: double-quoted-strings
@@ -136,25 +145,25 @@ contexts:
       scope: constant.language.gdscript
 
   builtin-types:
-    - match: \b(?:bool|int|float|String|funcref)\b
+    - match: '\b(?:void|bool|int|float|String|funcref)\b'
       scope: storage.type.basic.gdscript
     - match: '\b(?:Vector[23]|Rect2|Matrix32?|Plane|Quat|AABB|Transform)\b'
-      scope: storage.type.vector.gdscript
-    - match: \b(?:Color|Image|NodePath|RID|Object|InputEvent)\b
-      scope: storage.type.engine.gdscript
+      scope: support.class.vector.gdscript
+    - match: '\b(?:Color|Image|NodePath|RID|Object|InputEvent)\b'
+      scope: support.class.engine.gdscript
     - match: '\b(Array|Dictionary|ByteArray|IntArray|FloatArray|StringArray|Vector[23]Array|ColorArray)\b'
-      scope: storage.type.container.gdscript
+      scope: support.class.container.gdscript
 
   control-flow:
     - match: \b(?i:elif|else|for|if|while|break|continue|pass|return|match)\b
       scope: keyword.control.flow.gdscript
 
   operators:
-    - match: \b(?i:&&|and|in|is|!|not|\|\||or)\b
+    - match: '\b(?i:&&|and|in|is|!|not|\|\||or)\b'
       scope: keyword.operator.logical.gdscript
-    - match: <=|>=|==|<|>|!=
+    - match: '<=|>=|==|<|>|!='
       scope: keyword.operator.comparison.gdscript
-    - match: \+=|-=|\*=|/=|%=|&=|\|=|\*|/|% |\+|-|<<|>>|&|\||\^|~
+    - match: '\+=|-=|\*=|/=|%=|&=|\|=|\*|/|% |\+|-|<<|>>|&|\||\^|~'
       scope: keyword.operator.arithmetic.gdscript
 
   ### [ Script-level meta-declarations ] #########################################################################
@@ -163,79 +172,89 @@ contexts:
     - match: '\b(class_name)\b'
       scope: keyword.declaration.module.gdscript
       push: meta-class-name-identifier
+    - match: '\b(extends)\b'
+      scope: keyword.declaration.module.gdscript
+      push: meta-extends-identifier
 
   meta-class-name-identifier:
     - match: '{{identifier}}'
-      scope: entity.name.class.ds
+      scope: entity.name.class.gdscript
+      pop: true
+
+  meta-extends-identifier:
+    - match: '{{identifier}}'
+      scope: entity.other.inherited-class.gdscript
       pop: true
 
   ### [ Function definitions ] #########################################################################
 
   functions:
+    - meta_scope: meta.function.gdscript
     - match: ^\s*(?:(static|remote|sync|master|slave)\s+)?(func)\b
+      scope: keyword.declaration.function.gdscript
       captures:
         1: storage.modifier.gdscript
         2: storage.type.function.gdscript
-      push: function-definition
+      push: expect-function-name
 
-  function-definition:
-    - meta_scope: meta.function.gdscript
+  expect-function-name:
     - match: '{{identifier}}'
       scope: entity.name.function.gdscript
-    - match: (?=\()
-      set: function-parameters
+      set:
+        - match: '\('
+          scope: punctuation.section.parameters.begin.gdscript
+          set: accept-function-parameter
+        - include: else-unexpected
 
-  function-parameters:
+    - include: else-unexpected
+
+  accept-function-parameter:
     - meta_scope: meta.function.parameters.gdscript
-    - match: \(
-      scope: punctuation.section.parameters.begin.gdscript
-    - match: \)
-      scope: punctuation.section.parameters.end.gdscript
-      set: function-return-type
-    - include: parameter-definition
-
-  parameter-definition:
-    - match: '({{identifier}})\s*(=)\s*(["a-zA-Z0-9_]+)'
-      captures: 
-        1: variable.parameter.gdscript
-        2: keyword
-        3: variable.parameter.assignment.gdscript
-    - match: '({{identifier}})\s*:\s*([a-zA-Z0-9_]+)\s*(=)\s*(["a-zA-Z0-9_]+)'
-      captures: 
-        1: variable.parameter.gdscript
-        2: storage.type.basic.gdscript
-        3: keyword
-        4: variable.parameter.assignment.gdscript
-    - match: '({{identifier}})\s*:\s*([a-zA-Z0-9_]+)'
-      captures: 
-        1: variable.parameter.gdscript
-        2: storage.type.basic.gdscript
-    - match: '({{identifier}})'
-      captures: 
-        1: variable.parameter.gdscript
-    - match: ','
-      scope: punctuation.separator.parameters.gdscript
-
-  function-return-type:
-    - meta_scope: meta.function.gdscript
-    - include: start-func-body
-    - match: ->
-      scope: keyword.operator.arrow.forward.gdscript
-      set: function-return-type-definition
-
-  function-return-type-definition:
-    - meta_scope: meta.function.return-type
-    - include: start-func-body
-    - include: builtin-types
-    - match: \bvoid\b
-      scope: storage.type.basic.gdscript
     - match: '{{identifier}}'
-      scope: support.class.gdscript
+      scope: variable.parameter.gdscript
+      set:
+        - accept-function-parameter-next-or-end
+        - accept-function-parameter-default-value
+        - accept-function-parameter-type-annotation
+    - include: expect-function-parameter-list-end
 
-  start-func-body:
+  accept-function-parameter-type-annotation:
+    - match: ':'
+      scope: punctuation.separator.type.gdscript
+      set: expect-type-name
+    - include: else-pop
+
+  accept-function-parameter-default-value:
+    - match: '='
+      scope: keyword.operator.assignment.gdscript
+      set:
+        - include: expressions
+        - include: else-pop
+    - include: else-pop
+
+  accept-function-parameter-next-or-end:
+    - meta_scope: meta.function.parameters.gdscript
+    - match: ','
+      scope: punctuation.separator.parameters.gdscript wheeeee
+      set: accept-function-parameter
+    - include: expect-function-parameter-list-end
+
+  expect-function-parameter-list-end:
+    - match: '\)'
+      set: [expect-func-body, accept-function-return-type]
+    - include: else-unexpected
+
+  accept-function-return-type:
+    - match: '->'
+      scope: keyword.operator.arrow.forward.gdscript
+      set: expect-type-name
+    - include: else-pop
+
+  expect-func-body:
     - match: ':'
       scope: punctuation.section.function.begin.gdscript
       pop: true
+    - include: else-unexpected
 
   ### [ Class definitions ] #########################################################################
 
@@ -437,6 +456,11 @@ contexts:
 
   else-pop:
     - match: '{{catch_all}}'
+      pop: true
+
+  else-unexpected:
+    - match: '[^\s]'
+      scope: invalid.illegal.unexpect.gdscript
       pop: true
 
   immediately-pop:

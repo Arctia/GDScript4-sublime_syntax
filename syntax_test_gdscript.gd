@@ -139,6 +139,7 @@ var x setget set_x ,get_x
 #            ^^^^^ variable.function.setter.gdscript
 #                   ^^^^^ variable.function.getter.gdscript
 
+
 func foo():
     bar()
 #   ^^^ meta.function-call.gdscript variable.function.gdscript
@@ -253,19 +254,44 @@ signal foo \
 (foo,bar)
 # < meta.signal.parameters.gdscript
 
-@onready var myname:String = "name" 
+@onready var myname: String = "name" 
 
 @warning_ignore("integer_division")
 
 $Object1234/node2
-
 %Object1234
+$/Root/path
+%/Root/path
+
+&"String name"
+^"Node/Path"
+
+func aaaa(:
+
+func aaaa:()
+func aaaa() dadf adf
+func aaaa() -> dadfa:
 
 ## Documentation comment 
-func state(username: String = "parameter") -> void:
+func state(foo, with_type: int, with_type2: Vector2, with_default = "Foo", with_both: String = "parameter", asdf) -> void:
     pass
 
 @onready var foobar = xyz()
 
 class_name Weeeee
 extends Node3D
+
+function_call(asdf(), asdf, "")
+
+func function_call(hello = asdf(), asdf = ""):
+    pass
+
+var milliseconds: int = 0
+var seconds: int:
+    get:
+        return milliseconds / 1000
+    set(value):
+        milliseconds = value * 1000
+
+var seconds: int:
+    get = get_seconds, set = set_seconds
