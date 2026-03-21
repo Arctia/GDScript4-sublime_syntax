@@ -296,8 +296,9 @@ class_name Weeeee
 extends Node3D
 
 function_call(asdf(), asdf, "")
+foo.bar.function_call(asdf(), asdf, "")
 
-func function_call(hello = asdf(), asdf = ""):
+func function(hello = asdf(), asdf = ""):
     pass
 
 var milliseconds: int = 0

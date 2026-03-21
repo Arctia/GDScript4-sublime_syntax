@@ -438,8 +438,7 @@ contexts:
       scope: keyword.control.flow.yield.gdscript
       set:
         - match: (?=\()
-          push:
-            - include: function-call-arguments
+          set: function-call-arguments
         - include: immediately-pop
 
   ### [ General Purpose ] #########################################################################
