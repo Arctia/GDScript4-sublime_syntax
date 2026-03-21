@@ -105,6 +105,12 @@ func foo() -> void: pass
 func foo() -> FuncRef: pass
 #             ^^^^^^^ support.class.gdscript
 
+#region foobar baz
+
+func foo():
+    asdfasdfa
+    asdfasdf
+
 
 signal foo
 # <- storage.type.signal.gdscript
@@ -155,6 +161,8 @@ func foo():
 
     print(yield())
 #         ^^^^^ keyword.control.flow.yield.gdscript
+
+#endregion
 
 func foo():
     var a = {}
@@ -239,3 +247,8 @@ $Object1234/node2
 
 func state(username:String = "parameter", ) -> void:
     pass
+
+@onready var foobar = xyz()
+
+class_name Weeeee
+extends Node3D

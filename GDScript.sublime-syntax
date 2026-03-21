@@ -3,9 +3,6 @@
 name: GDScript (Godot Engine)
 file_extensions:
   - gd
-folding:
-  start: '^\s*#region'
-  end: '^\s*#endregion'
 scope: source.gdscript
 
 variables:
@@ -36,16 +33,23 @@ contexts:
       scope: keyword.constant.gdscript
 
   folding-regions:
-    - match: ^\s*(#region)\s*(.*)$
-      scope: keyword.control.region.begin.gdscript
+    - match: '^\s*(#region)\s+(.*)'
+      scope: meta.region.gdscript
+      captures:
+        1: keyword.control.region.begin.gdscript
+        2: entity.name.section.gdscript meta.fold.begin.gdscript
       push: region-content
-    - match: ^\s*(#endregion)\s*$
-      scope: keyword.control.region.end.gdscript
+    - match: '^\s*(#endregion)\b[^\S\n]*($\n?)'
+      captures:
+        1: keyword.control.region.end.gdscript
+        2: meta.fold.end.gdscript
 
   region-content:
     - meta_scope: meta.region.gdscript
-    - match: ^\s*(#endregion)\s*$
-      scope: keyword.control.region.end.gdscript
+    - match: '^\s*(#endregion)\b[^\S\n]*($\n?)'
+      captures:
+        1: keyword.control.region.end.gdscript
+        2: meta.fold.end.gdscript
       pop: true
     - include: main
 

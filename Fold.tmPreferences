@@ -9,9 +9,9 @@
 		<array>
 			<dict>
 				<key>begin</key>
-				<string>keyword.control.region.begin</string>
+				<string>meta.region meta.fold.begin</string>
 				<key>end</key>
-				<string>keyword.control.region.end</string>
+				<string>meta.region meta.fold.end</string>
 				<key>excludeTrailingNewlines</key>
                 <false/>
 			</dict>
