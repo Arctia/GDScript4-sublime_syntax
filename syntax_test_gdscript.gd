@@ -281,6 +281,7 @@ func state(foo, with_type: int, with_type2: Vector2, with_default = "Foo", with_
 class_name Weeeee
 extends Node3D
 extends "res://path/to/character.gd"
+extends "res://path/to/character.gd".Foobar
 
 function_call(asdf(), asdf, "")
 self.bar.function_call(asdf(), asdf[5], self.foo(), "")
@@ -371,4 +372,5 @@ class Circle extends Shape:
 
 class Square extends Shape:
     func draw():
+        super()
         print("Drawing a square.")

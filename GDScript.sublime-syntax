@@ -128,7 +128,7 @@ contexts:
   language-constants:
     - match: '\b(PI|TAU|INF|NAN)\b'
       scope: variable.language.gdscript
-    - match: '\b(self|true|false|null)\b'
+    - match: '\b(self|super|true|false|null)\b'
       scope: constant.language.gdscript
 
   builtin-types:
