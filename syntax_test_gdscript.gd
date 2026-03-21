@@ -134,18 +134,6 @@ signal foo \
 ()
 # < meta.signal.parameters.gdscript
 
-var x setget set_x
-#            ^^^^^ variable.function.setter.gdscript
-var x setget set_x, get_x
-#            ^^^^^ variable.function.setter.gdscript
-#                 ^ punctuation.separator.parameters.gdscript
-#                   ^^^^^ variable.function.getter.gdscript
-var x setget, get_x
-#             ^^^^^ variable.function.getter.gdscript
-var x setget set_x ,get_x
-#            ^^^^^ variable.function.setter.gdscript
-#                   ^^^^^ variable.function.getter.gdscript
-
 
 func foo():
     bar()
@@ -261,7 +249,7 @@ signal foo \
 (foo,bar)
 # < meta.signal.parameters.gdscript
 
-@onready var myname: String = "name" 
+@onready @export_range("Asdasd") var myname: String = "name" 
 
 @warning_ignore("integer_division")
 
@@ -280,25 +268,44 @@ $/%Root
 &"String name"
 ^"Node/Path"
 
-func aaaa(:
+func aaaa(: pass
 
 func aaaa:()
 func aaaa() dadf adf
-func aaaa() -> dadfa:
+func aaaa() -> dadfa: pass
 
 ## Documentation comment 
 func state(foo, with_type: int, with_type2: Vector2, with_default = "Foo", with_both: String = "parameter", asdf) -> void:
     pass
 
-@onready var foobar = xyz()
-
 class_name Weeeee
 extends Node3D
+extends "res://path/to/character.gd"
 
 function_call(asdf(), asdf, "")
 self.bar.function_call(asdf(), asdf[5], self.foo(), "")
 
 func function(hello = asdf(), asdf = ""):
+    pass
+
+@onready var foobar = xyz()
+var foobar
+static var foobar
+static var foobar = 123 as String
+
+var 123
+var $
+var @
+
+await signal
+breakpoint
+assert(asdf,"")
+
+if x is not Y:
+    pass
+elif y is X:
+    pass
+else:
     pass
 
 var milliseconds: int = 0
@@ -310,3 +317,58 @@ var seconds: int:
 
 var seconds: int:
     get = get_seconds, set = set_seconds
+
+const FOO = 123
+const FOO: int = 123
+
+enum Foobar {
+    FOO = 123,
+    BLAH,
+    BEZ = foo()
+}
+
+
+match x:
+    {}:
+        print("Empty dict")
+    {"name": "Dennis"}:
+        print("The name is Dennis")
+    {"name": "Dennis", "age": var age}:
+        print("Dennis is ", age, " years old.")
+    {"name", "age"}:
+        print("Has a name and an age, but it's not Dennis :(")
+    {"key": "godotisawesome", ..}:
+        print("I only checked for one entry and ignored the rest")
+
+match x:
+    1, 2, 3:
+        print("It's 1 - 3")
+    "Sword", "Splash potion", "Fist":
+        print("Yep, you've taken damage")
+    var new_var:
+        print("It's not 1 or 2, it's ", new_var)
+
+match point:
+    [0, 0]:
+        print("Origin")
+    [_, 0]:
+        print("Point on X-axis")
+    [0, _]:
+        print("Point on Y-axis")
+    [var x, var y] when y == x:
+        print("Point on line y = x")
+    [var x, var y] when y == -x:
+        print("Point on line y = -x")
+    [var x, var y]:
+        print("Point (%s, %s)" % [x, y])
+
+@abstract class Shape:
+    @abstract func draw()
+
+class Circle extends Shape:
+    func draw():
+        print("Drawing a circle.")
+
+class Square extends Shape:
+    func draw():
+        print("Drawing a square.")
