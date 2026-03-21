@@ -24,7 +24,6 @@ contexts:
     - include: statements
     - include: meta-declarations
     - include: annotations
-    - include: fallback-named-constants
     - include: fallback-object-names
 
   fallback-object-names:
@@ -89,6 +88,7 @@ contexts:
     - include: yield-expressions
     - include: function-calls
     - include: square-brackets
+    - include: fallback-named-constants
 
   statements:
     - match: "="
