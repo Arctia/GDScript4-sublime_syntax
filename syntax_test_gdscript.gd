@@ -235,7 +235,23 @@ enum TEST {
 yield
 await
 signal mysignal
-( false, %ciao, $Object\node34, self.me, true) true
+( false, %ciao, $Object/node34, self.me, true) true
+
+
+signal foo
+# <- storage.type.signal.gdscript
+#      ^^^ entity.name.signal.gdscript
+signal foo()
+#^^^^^^^^^ meta.signal.gdscript
+#         ^^ meta.signal.parameters.gdscript
+#         ^  punctuation.section.parameters.begin.gdscript
+#          ^ punctuation.section.parameters.end.gdscript
+signal foo(bar, baz)
+#          ^^^ variable.parameter.gdscript
+#             ^ punctuation.separator.parameters.gdscript
+signal foo \
+()
+# < meta.signal.parameters.gdscript
 
 @onready var myname:String = "name" 
 
@@ -245,7 +261,8 @@ $Object1234/node2
 
 %Object1234
 
-func state(username:String = "parameter", ) -> void:
+## Documentation comment 
+func state(username: String = "parameter") -> void:
     pass
 
 @onready var foobar = xyz()

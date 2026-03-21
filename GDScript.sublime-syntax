@@ -6,7 +6,7 @@ file_extensions:
 scope: source.gdscript
 
 variables:
-  identifier: \b[a-zA-Z_][a-zA-Z_0-9]*\b
+  identifier: '\b[a-zA-Z_][a-zA-Z_0-9]*\b'
 
 contexts:
   prototype:
@@ -16,10 +16,11 @@ contexts:
   main:
     - include: folding-regions
     - include: docstrings
+    - include: annotations
     - include: expressions
     - include: assignments
+    - include: meta-declarations
     - include: keywords
-    - include: node-paths
     - include: square-brackets
     - include: constants
     - include: objects
@@ -65,6 +66,10 @@ contexts:
           scope: punctuation.definition.comment.end.gdscript
           pop: true
 
+  annotations:
+    - match: '@{{identifier}}'
+      scope: storage.modifier.gdscript
+
   expressions:
     - include: literals
     - include: builtin-types
@@ -73,6 +78,7 @@ contexts:
     - include: operators
     - include: yields
     - include: function-calls
+    - include: node-paths
 
   assignments:
     - match: "="
@@ -87,10 +93,11 @@ contexts:
       scope: keyword.other.gdscript
 
   node-paths:
+    - meta_scope: meta.path.gdscript
     - match: '\$[a-zA-Z_][a-zA-Z0-9_]*(?:/[a-zA-Z_][a-zA-Z0-9_]*)*'
-      scope: comment.node.dollar-node
+      scope: entity.name.dollar-node.gdscript
     - match: '\%[a-zA-Z_][a-zA-Z0-9_]*(?:/[a-zA-Z_][a-zA-Z0-9_]*)*'
-      scope: comment.node.percentage-node
+      scope: entity.name.percentage-node.gdscript
     - match: '@\b\w+\b'
       scope: keyword.at-sign.gdscript
 
@@ -141,6 +148,20 @@ contexts:
       scope: keyword.operator.comparison.gdscript
     - match: \+=|-=|\*=|/=|%=|&=|\|=|\*|/|% |\+|-|<<|>>|&|\||\^|~
       scope: keyword.operator.arithmetic.gdscript
+
+  ### [ Script-level meta-declarations ] #########################################################################
+
+  meta-declarations:
+    - match: '\b(class_name)\b'
+      scope: keyword.declaration.module.gdscript
+      push: meta-class-name-identifier
+
+  meta-class-name-identifier:
+    - match: '{{identifier}}'
+      scope: entity.name.class.ds
+      pop: true
+
+  ### [ Function definitions ] #########################################################################
 
   functions:
     - match: ^\s*(?:(static|remote|sync|master|slave)\s+)?(func)\b
@@ -208,6 +229,8 @@ contexts:
       scope: punctuation.section.function.begin.gdscript
       pop: true
 
+  ### [ Class definitions ] #########################################################################
+
   class-definition:
   - match: '^\s*(?i:(class))\s+({{identifier}})\s*(?:(extends)\s+({{identifier}}))?'
     captures:
@@ -216,6 +239,7 @@ contexts:
       3: keyword.other.extends.gdscript
       4: entity.other.inherited-class.gdscript
 
+  ### [ Signal definitions ] #########################################################################
 
   signals:
     - match: ^\s*signal\b
@@ -397,15 +421,13 @@ contexts:
       scope: punctuation.separator.arguments.gdscript
     - match: '\b(self)\b'
       scope: keyword.self
-    - match: '\$\b[a-zA-Z0-9\\_]+\b'
-      scope: comment.node.dollar-node
-    - match: '%\b\w+\b'
-      scope: comment.node.percentage-node
     - include: constants
     - include: objects
     - match: \)
       scope: punctuation.section.arguments.end.gdscript
       pop: true
+
+  ### [ General Purpose ] #########################################################################
 
   line-continuation:
     - match: (\\)(.*)$\n?
