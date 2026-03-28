@@ -1,5 +1,7 @@
 # SYNTAX TEST "Packages/User/GDScript-sublime/GDScript.sublime-syntax"
 
+# https://github.com/godotengine/godot/tree/master/modules/gdscript/tests/scripts/parser
+
 (self)
 
 """ # still a block comment """
@@ -286,13 +288,28 @@ extends "res://path/to/character.gd".Foobar
 function_call(asdf(), asdf, "")
 self.bar.function_call(asdf(), asdf[5], self.foo(), "")
 
-func function(hello = asdf(), asdf = ""):
+func function(hello = asdf(), asdf : = "", ...foo):
     pass
 
 @onready var foobar = xyz()
 var foobar
 static var foobar
 static var foobar = 123 as String
+static var foobar = [123] as Array[int]
+
+var foo: Array[int]
+var foo: Dictionary[String, Bar]
+var foo := 123
+
+var foobar: int
+var foobar: Foobar = 123
+
+var foobar:
+    set: pass
+    get: return 1
+
+var foo ; var bar: = 123
+
 
 var 123
 var $
@@ -319,6 +336,8 @@ var seconds: int:
 var seconds: int:
     get = get_seconds, set = set_seconds
 
+call_with_lambda(func(asdf): pass)
+
 const FOO = 123
 const FOO: int = 123
 
@@ -327,7 +346,6 @@ enum Foobar {
     BLAH,
     BEZ = foo()
 }
-
 
 match x:
     {}:
