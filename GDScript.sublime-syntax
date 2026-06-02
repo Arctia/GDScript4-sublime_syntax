@@ -1,15 +1,24 @@
 %YAML 1.2
 ---
 name: GDScript (Godot Engine)
+version: 2
 file_extensions:
   - gd
-folding:
-  start: '^\s*#region'
-  end: '^\s*#endregion'
 scope: source.gdscript
 
 variables:
-  identifier: \b[a-zA-Z_][a-zA-Z_0-9]*\b
+  identifier: '\b[a-zA-Z_][a-zA-Z_0-9]*\b'
+  node_path_segment: '%?{{identifier}}'
+  catch_all: '(?=\S)'
+
+  word_widths: '(?:32|64)'
+
+  basic_types: 'bool|int|float|String'
+  math_types: 'Vector[234]i?|Rect2i?|Plane|Quaternion|Basis|Projection|AABB|Transform[23]D'
+  core_types: 'StringName|NodePath|RID|Object|Signal|Callable|Variant|Node'
+  packed_array_types: 'Packed(?:Byte|Int{{word_widths}}|Float{{word_widths}}|String|Vector[234]|Color)Array'
+  common_engine_types: 'Color|Image|InputEvent|{{core_types}}|{{packed_array_types}}'
+  container_types: 'Array|Dictionary'
 
 contexts:
   prototype:
@@ -19,35 +28,47 @@ contexts:
   main:
     - include: folding-regions
     - include: docstrings
-    - include: expressions
-    - include: assignments
     - include: keywords
-    - include: node-paths
-    - include: square-brackets
-    - include: constants
-    - include: objects
+    - include: expressions
+    - include: statements
+    - include: meta-declarations
+    - include: annotations
+    - include: fallback-object-names
 
-  objects:
+  fallback-object-names:
     - match: '\b([A-Z][a-zA-Z0-9_]*)\b'
-      scope: keyword.class.object.gdscript
-  
-  constants:
-    - match: '\b([A-Z0-9_]*)\b'
-      scope: keyword.constant.gdscript
+      scope: storage.type.gdscript
+
+  fallback-named-constants:
+    - match: '\b([A-Z0-9_]+)\b'
+      scope: constant.other.gdscript
 
   folding-regions:
-    - match: ^\s*(#region)\s*(.*)$
-      scope: keyword.control.region.begin.gdscript
+    - match: '^\s*(#region)\s+(.*)'
+      scope: meta.region.gdscript
+      captures:
+        1: keyword.control.region.begin.gdscript
+        2: entity.name.section.gdscript meta.fold.begin.gdscript
       push: region-content
-    - match: ^\s*(#endregion)\s*$
-      scope: keyword.control.region.end.gdscript
+    - match: '^\s*(#endregion)\b[^\S\n]*($\n?)'
+      captures:
+        1: keyword.control.region.end.gdscript
+        2: meta.fold.end.gdscript
 
   region-content:
     - meta_scope: meta.region.gdscript
-    - match: ^\s*(#endregion)\s*$
-      scope: keyword.control.region.end.gdscript
+    - match: '^\s*(#endregion)\b[^\S\n]*($\n?)'
+      captures:
+        1: keyword.control.region.end.gdscript
+        2: meta.fold.end.gdscript
       pop: true
     - include: main
+
+  comments:
+    - match: (#)(?!region|endregion).*
+      scope: comment.line.number-sign.gdscript
+      captures:
+        1: punctuation.definition.comment.number-sign.gdscript
 
   docstrings:
     - match: ^\s*(""")
@@ -61,215 +82,80 @@ contexts:
           scope: punctuation.definition.comment.end.gdscript
           pop: true
 
+  annotations:
+    - match: '@{{identifier}}'
+      scope: storage.modifier.gdscript
+
   expressions:
     - include: literals
     - include: builtin-types
+    - include: language-constants
     - include: dictionaries
     - include: control-flow
+    - include: node-paths
     - include: operators
-    - include: yields
     - include: function-calls
+    - include: square-brackets
+    - include: fallback-named-constants
 
-  assignments:
-    - match: "="
+  statements:
+    - match: ":?="
       scope: keyword.operator.assignment.gdscript
     - include: class-definition
-    - include: functions
+    - include: enum-definition
     - include: signals
     - include: variable-declarations
+    - include: function-definitions
+    - match: ';'
+      scope: punctuation.separator.gdscript
 
   keywords:
-    - match: '\b(self|class_name|await|var|const|extends|enum|export|setget|tool|static|remote|sync|master|slave)\b'
+    - match: '\b(set|get)\b'
       scope: keyword.other.gdscript
+    - match: '\b(static|remote|sync|master|slave)\b'
+      scope: storage.modifier.gdscript
 
   node-paths:
-    - match: '\$[a-zA-Z_][a-zA-Z0-9_]*(?:/[a-zA-Z_][a-zA-Z0-9_]*)*'
-      scope: comment.node.dollar-node
-    - match: '\%[a-zA-Z_][a-zA-Z0-9_]*(?:/[a-zA-Z_][a-zA-Z0-9_]*)*'
-      scope: comment.node.percentage-node
-    - match: '@\b\w+\b'
-      scope: keyword.at-sign.gdscript
+    - meta_scope: meta.path.gdscript
+    - match: '\$/?{{node_path_segment}}(?:/{{node_path_segment}})*'
+      scope: entity.name.node.gdscript
+    - match: '\%{{identifier}}(?:/{{node_path_segment}})*'
+      scope: entity.name.node.gdscript
 
   literals:
     - include: strings
-    - include: numbers
-    - include: booleans-and-null
+    - include: scope:source.python#numbers
 
-  strings:
-    - include: double-quoted-strings
-    - include: single-quoted-strings
-    - include: node-path-strings
-
-  numbers:
-    - match: \b(?i:0x\h*)\b
-      scope: constant.numeric.integer.hexadecimal.gdscript
-    - match: '\b(?i:(\d+\.\d*(e[\-\+]?\d+)?))\b'
-      scope: constant.numeric.float.gdscript
-    - match: '\b(?i:(\.\d+(e[\-\+]?\d+)?))\b'
-      scope: constant.numeric.float.gdscript
-    - match: '\b(?i:(\d+e[\-\+]?\d+))\b'
-      scope: constant.numeric.float.gdscript
-    - match: \b\d+\b
-      scope: constant.numeric.integer.gdscript
-
-  booleans-and-null:
-    - match: '\b(true|false|null)\b'
+  language-constants:
+    - match: '\b(PI|TAU|INF|NAN)\b'
+      scope: variable.language.gdscript
+    - match: '\b(self|super|true|false|null)\b'
       scope: constant.language.gdscript
 
   builtin-types:
-    - match: \b(?:bool|int|float|String|funcref)\b
+    - match: '\b(?:{{basic_types}})\b'
       scope: storage.type.basic.gdscript
-    - match: '\b(?:Vector[23]|Rect2|Matrix32?|Plane|Quat|AABB|Transform)\b'
-      scope: storage.type.vector.gdscript
-    - match: \b(?:Color|Image|NodePath|RID|Object|InputEvent)\b
-      scope: storage.type.engine.gdscript
-    - match: '\b(Array|Dictionary|ByteArray|IntArray|FloatArray|StringArray|Vector[23]Array|ColorArray)\b'
-      scope: storage.type.container.gdscript
+    - match: '\b(?:{{math_types}})\b'
+      scope: support.class.vector.gdscript
+    - match: '\b(?:{{common_engine_types}})\b'
+      scope: support.class.engine.gdscript
+    - match: '\b(?:{{container_types}})\b'
+      scope: support.class.container.gdscript
 
+  # TODO Most of these shouldn't be included in 'expression'!
   control-flow:
-    - match: \b(?i:elif|else|for|if|while|break|continue|pass|return|match)\b
+    - match: \b(?i:elif|else|for|if|while|break|continue|pass|return|match|await|breakpoint|when)\b
       scope: keyword.control.flow.gdscript
 
   operators:
-    - match: \b(?i:&&|and|in|is|!|not|\|\||or)\b
+    - match: '\b(?i:&&|and|in|is|!|not|\|\||or)\b'
       scope: keyword.operator.logical.gdscript
-    - match: <=|>=|==|<|>|!=
+    - match: '<=|>=|==|<|>|!='
       scope: keyword.operator.comparison.gdscript
-    - match: \+=|-=|\*=|/=|%=|&=|\|=|\*|/|% |\+|-|<<|>>|&|\||\^|~
+    - match: '\+=|-=|\*=|/=|%=|&=|\|=|\*|/|%|\+|-|<<|>>|&|\||\^|~'
       scope: keyword.operator.arithmetic.gdscript
-
-  functions:
-    - match: ^\s*(?:(static|remote|sync|master|slave)\s+)?(func)\b
-      captures:
-        1: storage.modifier.gdscript
-        2: storage.type.function.gdscript
-      push: function-definition
-
-  function-definition:
-    - meta_scope: meta.function.gdscript
-    - match: '{{identifier}}'
-      scope: entity.name.function.gdscript
-    - match: (?=\()
-      set: function-parameters
-
-  function-parameters:
-    - meta_scope: meta.function.parameters.gdscript
-    - match: \(
-      scope: punctuation.section.parameters.begin.gdscript
-    - match: \)
-      scope: punctuation.section.parameters.end.gdscript
-      set: function-return-type
-    - include: parameter-definition
-
-  parameter-definition:
-    - match: '({{identifier}})\s*(=)\s*(["a-zA-Z0-9_]+)'
-      captures: 
-        1: variable.parameter.gdscript
-        2: keyword
-        3: variable.parameter.assignment.gdscript
-    - match: '({{identifier}})\s*:\s*([a-zA-Z0-9_]+)\s*(=)\s*(["a-zA-Z0-9_]+)'
-      captures: 
-        1: variable.parameter.gdscript
-        2: storage.type.basic.gdscript
-        3: keyword
-        4: variable.parameter.assignment.gdscript
-    - match: '({{identifier}})\s*:\s*([a-zA-Z0-9_]+)'
-      captures: 
-        1: variable.parameter.gdscript
-        2: storage.type.basic.gdscript
-    - match: '({{identifier}})'
-      captures: 
-        1: variable.parameter.gdscript
-    - match: ','
-      scope: punctuation.separator.parameters.gdscript
-
-  function-return-type:
-    - meta_scope: meta.function.gdscript
-    - include: start-func-body
-    - match: ->
-      scope: keyword.operator.arrow.forward.gdscript
-      set: function-return-type-definition
-
-  function-return-type-definition:
-    - meta_scope: meta.function.return-type
-    - include: start-func-body
-    - include: builtin-types
-    - match: \bvoid\b
-      scope: storage.type.basic.gdscript
-    - match: '{{identifier}}'
-      scope: support.class.gdscript
-
-  start-func-body:
-    - match: ':'
-      scope: punctuation.section.function.begin.gdscript
-      pop: true
-
-  class-definition:
-  - match: '^\s*(?i:(class))\s+({{identifier}})\s*(?:(extends)\s+({{identifier}}))?'
-    captures:
-      1: storage.type.class.gdscript
-      2: entity.name.type.class.gdscript
-      3: keyword.other.extends.gdscript
-      4: entity.other.inherited-class.gdscript
-
-
-  signals:
-    - match: ^\s*signal\b
-      scope: storage.type.signal.gdscript
-      push: signal-definition
-
-  signal-definition:
-    - meta_scope: meta.signal.gdscript
-    - match: '{{identifier}}'
-      scope: entity.name.signal.gdscript
-    - match: $
-      pop: true
-    - match: (?=\()
-      set: signal-parameters
-
-  signal-parameters:
-    - meta_scope: meta.signal.parameters.gdscript
-    - match: \(
-      scope: punctuation.section.parameters.begin.gdscript
-    - match: '{{identifier}}'
-      scope: variable.parameter.gdscript
-    - match: ','
-      scope: punctuation.separator.parameters.gdscript
-    - match: \)
-      scope: punctuation.section.parameters.end.gdscript
-      pop: true
-
-  variable-declarations:
-    - match: '(?i:\b(?:(onready)\s+)?(var))\s+({{identifier}})\s*:\s*([a-zA-Z0-9_]+)'
-      captures:
-        1: keyword.other.onready.gdscript
-        2: storage.type.var.gdscript
-        3: variable.other.gdscript
-        4: storage.type
-    - match: '(?i:\b(?:(onready)\s+)?(var))\s+({{identifier}})'
-      captures:
-        1: keyword.other.onready.gdscript
-        2: storage.type.var.gdscript
-        3: variable.other.gdscript
-    - match: '\b(?i:(const))\s+({{identifier}})\s*:\s*([a-zA-Z0-9_]+)'
-      captures:
-        1: storage.type.const.gdscript
-        2: variable.other.gdscript
-        3: storage.type
-    - match: '\b(?i:(const))\s+({{identifier}})'
-      captures:
-        1: storage.type.const.gdscript
-        2: variable.other.gdscript
-    - match: '\b(?i:(enum))\s+({{identifier}})?'
-      captures:
-        1: storage.type.enum.gdscript
-        2: entity.name.type.gdscript
-
-  comments:
-    - match: (#)(?!region|endregion).*
-      scope: comment.line.number-sign.gdscript
-      captures:
-        1: punctuation.definition.comment.number-sign.gdscript
+    - match: '\b(as)\b'
+      scope: keyword.operator.gdscript
 
   square-brackets:
     - match: '\['
@@ -282,12 +168,20 @@ contexts:
       scope: punctuation.section.brackets.end.gdscript
       pop: true
     - include: expressions
+    - match: '\bvar\b' # To handle (more or less) binding patterns in match blocks
+      scope: keyword.declaration.variable.gdscript
     - match: ','
       scope: punctuation.separator.sequence.gdscript
-    - include: square-brackets
-    - include: constants
-    - include: objects
 
+  ### [ Strings ] #########################################################################
+
+  strings:
+    - include: double-quoted-strings
+    - include: single-quoted-strings
+    - include: node-path-strings
+    - include: string-name-strings
+
+  # TODO: Raw strings
   double-quoted-strings:
     - match: \"""
       scope: punctuation.definition.string.begin.gdscript
@@ -320,15 +214,34 @@ contexts:
           pop: true
 
   node-path-strings:
-    - match: '@"'
+    - match: '\^"'
       push:
         - meta_scope: string.quoted.double.node-path.gdscript
+        - match: '(?<!\\)"'
+          pop: true
+    - match: '\$"'
+      push:
+        - meta_scope: entity.name.node.gdscript
+        - match: '(?<!\\)"'
+          pop: true
+    - match: '\%"'
+      push:
+        - meta_scope: entity.name.node.gdscript
+        - match: '(?<!\\)"'
+          pop: true
+
+  string-name-strings:
+    - match: '\&"'
+      push:
+        - meta_scope: string.quoted.double.string-name.gdscript
         - match: (?<!\\)"
           pop: true
 
   character-escapes:
     - match: \\["'\\]
       scope: constant.character.escape.gdscript
+
+  ### [ Dictionary literals ] #########################################################################
 
   dictionaries:
     - match: '{'
@@ -353,10 +266,9 @@ contexts:
     - match: ','
       scope: punctuation.separator.mapping.gdscript
       set: dictionary-keys
+    - match: '\bvar\b' # To handle (more or less) binding patterns in match blocks
+      scope: keyword.declaration.variable.gdscript
     - include: expressions
-    - include: square-brackets
-    - include: constants
-    - include: objects
 
   dictionary-close-pop:
     - match: '\s*(})'
@@ -364,43 +276,326 @@ contexts:
         1: punctuation.section.mapping.end.gdscript
       pop: true
 
+  ### [ Function calls ] #########################################################################
+
   function-calls:
+    - match: '\bassert\b'
+      scope: keyword.control.flow.gdscript
+      push: function-call-arguments
     - match: '{{identifier}}(?=\s*\()'
       scope: meta.function-call.gdscript variable.function.gdscript
-    - match: (?=\()
       push: function-call-arguments
 
   function-call-arguments:
     - meta_scope: meta.function-call.arguments.gdscript
-    - include: arguments-list
-
-  yields:
-    - match: \byield\b
-      scope: keyword.control.flow.yield.gdscript
-      push:
-        - match: (?=\()
-          push:
-            - include: arguments-list
-        - match: ''
-          pop: true
-
-  arguments-list:
     - match: \(
       scope: punctuation.section.arguments.begin.gdscript
     - include: expressions
-    - include: square-brackets
     - match: ','
       scope: punctuation.separator.arguments.gdscript
-    - match: '\b(self)\b'
-      scope: keyword.self
-    - match: '\$\b[a-zA-Z0-9\\_]+\b'
-      scope: comment.node.dollar-node
-    - match: '%\b\w+\b'
-      scope: comment.node.percentage-node
-    - include: constants
-    - include: objects
     - match: \)
       scope: punctuation.section.arguments.end.gdscript
+      pop: true
+
+  ### [ Script-level meta-declarations ] #########################################################################
+
+  meta-declarations:
+    - match: '\b(class_name)\b'
+      scope: keyword.declaration.module.gdscript
+      push: meta-class-name-identifier
+    - match: '\b(extends)\b'
+      scope: keyword.declaration.module.gdscript
+      push: expect-meta-extends-identifier
+
+  meta-class-name-identifier:
+    - match: '{{identifier}}'
+      scope: entity.name.class.gdscript
+      pop: true
+
+  expect-meta-extends-identifier:
+    - match: '{{identifier}}'
+      scope: entity.other.inherited-class.gdscript
+      pop: true
+    - match: '{{catch_all}}'
+      set:
+        # TODO this is technically too permissive, ideally this would be an 'expect-string'
+        - include: strings
+        - include: else-pop
+    - include: else-illegal
+
+  ### [ Typenames ] #########################################################################
+
+  # Typenames are always an identifier, optionally followed by generic arguments or a period followed by more identifiers
+  expect-type-name:
+    - match: '\b(?:{{basic_types}})\b'
+      scope: storage.type.basic.gdscript
+      pop: true
+    - match: '\b(?:{{math_types}})\b'
+      scope: support.class.vector.gdscript
+      pop: true
+    - match: '\b(?:{{common_engine_types}})\b'
+      scope: support.class.engine.gdscript
+      pop: true
+    - match: '\b(?:{{container_types}})\b'
+      scope: support.class.container.gdscript
+      set: accept-container-generic-arguments
+    - match: '{{identifier}}' # fallback
+      scope: storage.type.gdscript
+      pop: true
+    - include: line-continuation-or-pop
+    - include: else-illegal
+
+  accept-container-generic-arguments:
+    - match: '\['
+      scope: punctuation.section.brackets.begin.gdscript
+      push: container-generic-args-body
+    - include: else-pop
+
+  # Arrays and Dictionary arguments must only be types - no expressions allowed
+  container-generic-args-body:
+    - meta_scope: meta.brackets.gdscript meta.type.parameters.gdscript
+    - match: '\]'
+      scope: punctuation.section.brackets.end.gdscript
+      pop: true
+    - match: ','
+      scope: punctuation.separator.sequence.gdscript
+    - match: '{{catch_all}}'
+      push:
+      - include: expect-type-name
+
+
+  ### [ Definition parts ] #########################################################################
+
+  accept-type-annotation:
+    - match: ':(?!\s*=)'
+      scope: punctuation.separator.type.gdscript
+      set: expect-type-name
+    - include: else-pop
+
+  accept-initializer:
+    - match: ':?\s*='
+      scope: keyword.operator.assignment.gdscript
+      set:
+        - include: expressions
+        - include: else-pop
+    - include: else-pop
+
+
+  ### [ Function definitions ] #########################################################################
+
+  function-definitions:
+    - meta_scope: meta.function.gdscript
+    - match: '(@abstract)\s+(func)\b'
+      captures:
+        1: storage.modifier.gdscript
+        2: keyword.declaration.function.gdscript
+      push: 
+        - expect-function-parameter-list
+        - expect-function-name
+
+    - match: '\b(func)\b'
+      scope: keyword.declaration.function.gdscript
+      push:
+        - expect-func-body
+        - expect-function-parameter-list
+        - expect-function-name
+
+  expect-function-name:
+    - match: '{{identifier}}'
+      scope: entity.name.function.gdscript
+      pop: true
+
+    - include: else-illegal
+
+  expect-function-parameter-list:
+    - match: '\('
+      scope: punctuation.section.parameters.begin.gdscript
+      set: accept-function-parameter
+    - include: else-illegal
+
+  accept-function-parameter:
+    - meta_scope: meta.function.parameters.gdscript
+    - match: '{{identifier}}'
+      scope: variable.parameter.gdscript
+      set:
+        - accept-function-parameter-next-or-end
+        - accept-initializer # default values
+        - accept-type-annotation
+    - match: '\.\.\.'
+      scope: keyword.operator.gdscript
+      set: expect-rest-parameter
+    - include: expect-function-parameter-list-end
+
+  expect-rest-parameter:
+    - match: '{{identifier}}'
+      scope: variable.parameter.gdscript
+      set:
+        - expect-function-parameter-list-end
+        - accept-type-annotation
+    - include: else-illegal
+
+  accept-function-parameter-next-or-end:
+    - meta_scope: meta.function.parameters.gdscript
+    - match: ','
+      scope: punctuation.separator.parameters.gdscript wheeeee
+      set: accept-function-parameter
+    - include: expect-function-parameter-list-end
+
+  expect-function-parameter-list-end:
+    - match: '\)'
+      set: accept-function-return-type
+    - include: else-illegal
+
+  accept-function-return-type:
+    - match: '->'
+      scope: keyword.operator.arrow.forward.gdscript
+      set: expect-void-or-typename
+    - include: else-pop
+
+  expect-void-or-typename:
+    - match: '\bvoid\b'
+      scope: storage.type.basic.gdscript
+      pop: true
+    - include: expect-type-name
+
+  expect-func-body:
+    - match: ':'
+      scope: punctuation.section.function.begin.gdscript
+      pop: true
+    - include: else-illegal
+
+  ### [ Class definitions ] #########################################################################
+
+  class-definition:
+  - match: '\bclass\b'
+    scope: keyword.declaration.class.gdscript
+    push: [expect-class-body, accept-extends-clause, expect-class-name]
+
+  expect-class-name:
+    - match: '{{identifier}}'
+      scope: entity.name.class.gdscript
+      pop: true
+    - include: else-illegal
+
+  accept-extends-clause:
+    - match: '\bextends\b'
+      scope: keyword.other.extends.gdscript
+      set: expect-type-name
+    - include: else-pop
+
+  expect-class-body:
+    - match: ':'
+      scope: punctuation.section.definition.begin.gdscript
+      pop: true
+    - include: else-illegal
+
+  ### [ Enum definition ] #########################################################################
+
+  enum-definition:
+  - match: '\benum\b'
+    scope: keyword.declaration.enum.gdscript
+    push: [expect-enum-body, accept-enum-name]
+
+  accept-enum-name:
+    - match: '{{identifier}}'
+      scope: entity.name.enum.gdscript
+      pop: true
+    - include: else-pop
+
+  expect-enum-body:
+    - match: '{'
+      scope: punctuation.section.brackets.begin.gdscript
+      set: accept-enum-member
+    - include: else-illegal
+
+  accept-enum-member:
+    - match: '}'
+      scope: punctuation.section.brackets.end.gdscript
+      pop: true
+    - match: '{{identifier}}'
+      scope: entity.name.constant.gdscript
+      set: [expect-comma-or-enum-end, accept-initializer]
+    - include: else-illegal
+
+  expect-comma-or-enum-end:
+    - match: '}'
+      scope: punctuation.section.brackets.end.gdscript
+      pop: true
+    - match: ','
+      scope: punctuation.separator.gdscript
+      set: accept-enum-member
+    - include: else-illegal
+
+  ### [ Signal definitions ] #########################################################################
+
+  signals:
+    - match: ^\s*signal\b
+      scope: storage.type.signal.gdscript
+      push: signal-definition
+
+  signal-definition:
+    - meta_scope: meta.signal.gdscript
+    - match: '{{identifier}}'
+      scope: entity.name.signal.gdscript
+    - match: (?=\()
+      set: signal-parameters
+    - include: line-continuation-or-pop
+
+  signal-parameters:
+    - meta_scope: meta.signal.parameters.gdscript
+    - match: \(
+      scope: punctuation.section.parameters.begin.gdscript
+    - match: '{{identifier}}'
+      scope: variable.parameter.gdscript
+    - match: ','
+      scope: punctuation.separator.parameters.gdscript
+    - match: \)
+      scope: punctuation.section.parameters.end.gdscript
+      pop: true
+
+  ### [ Variable declarations ] #########################################################################
+
+  variable-declarations:
+    - match: '\bvar\b'
+      scope: keyword.declaration.variable.gdscript
+      push:
+        - accept-property-block
+        - accept-initializer
+        - accept-type-annotation
+        - accept-property-block
+        - expect-variable-name
+    - match: '\bconst\b'
+      scope: keyword.declaration.variable.constant.gdscript
+      push:
+        - accept-initializer
+        - accept-type-annotation
+        - expect-constant-name
+
+  expect-variable-name:
+    - match: '{{identifier}}'
+      scope: variable.other.gdscript
+      pop: true
+    - include: else-illegal
+
+  expect-constant-name:
+    - match: '{{identifier}}'
+      scope: entity.name.constant.gdscript
+      pop: true
+    - include: else-illegal
+
+  accept-property-block:
+    - match: ':(?=set\b|get\b)'
+      scope: punctuation.separator.block.begin.gdscript
+      pop: true
+      # TODO could go through and parse set(value) and co, but I'm lazy
+    - include: else-pop
+
+  ### [ General Purpose ] #########################################################################
+
+  # Taken from default sublime python syntax
+  line-continuation-or-pop:
+    - include: line-continuation
+    - match: (?=\s*[\n#])
       pop: true
 
   line-continuation:
@@ -408,3 +603,16 @@ contexts:
       captures:
         1: punctuation.separator.continuation.line.gdscript
         2: invalid.illegal.unexpected-text.gdscript
+
+  else-pop:
+    - match: '{{catch_all}}'
+      pop: true
+
+  else-illegal:
+    - match: '[^\s]'
+      scope: invalid.illegal.gdscript
+      pop: true
+
+  immediately-pop:
+    - match: ''
+      pop: true

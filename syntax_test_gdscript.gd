@@ -1,5 +1,7 @@
 # SYNTAX TEST "Packages/User/GDScript-sublime/GDScript.sublime-syntax"
 
+# https://github.com/godotengine/godot/tree/master/modules/gdscript/tests/scripts/parser
+
 (self)
 
 """ # still a block comment """
@@ -48,6 +50,13 @@ var x = """ \""" """
 123  # this actually won't compile outside a function
 # <- constant.numeric.integer.gdscript
 #    ^ punctuation.definition.comment.number-sign.gdscript
+
+0x12ff
+0b1001
+3.512
+10.0e-10
+
+123_123
 
 
 func foo(): pass
@@ -105,6 +114,12 @@ func foo() -> void: pass
 func foo() -> FuncRef: pass
 #             ^^^^^^^ support.class.gdscript
 
+#region foobar baz
+
+func foo():
+    asdfasdfa
+    asdfasdf
+
 
 signal foo
 # <- storage.type.signal.gdscript
@@ -121,17 +136,6 @@ signal foo \
 ()
 # < meta.signal.parameters.gdscript
 
-var x setget set_x
-#            ^^^^^ variable.function.setter.gdscript
-var x setget set_x, get_x
-#            ^^^^^ variable.function.setter.gdscript
-#                 ^ punctuation.separator.parameters.gdscript
-#                   ^^^^^ variable.function.getter.gdscript
-var x setget, get_x
-#             ^^^^^ variable.function.getter.gdscript
-var x setget set_x ,get_x
-#            ^^^^^ variable.function.setter.gdscript
-#                   ^^^^^ variable.function.getter.gdscript
 
 func foo():
     bar()
@@ -155,6 +159,8 @@ func foo():
 
     print(yield())
 #         ^^^^^ keyword.control.flow.yield.gdscript
+
+#endregion
 
 func foo():
     var a = {}
@@ -227,15 +233,162 @@ enum TEST {
 yield
 await
 signal mysignal
-( false, %ciao, $Object\node34, self.me, true) true
+( false, %ciao, $Object/node34, self.me, true, [asdf, false], "asdf", PI, TAU, NAN, INF) true
 
-@onready var myname:String = "name" 
+
+signal foo
+# <- storage.type.signal.gdscript
+#      ^^^ entity.name.signal.gdscript
+signal foo()
+#^^^^^^^^^ meta.signal.gdscript
+#         ^^ meta.signal.parameters.gdscript
+#         ^  punctuation.section.parameters.begin.gdscript
+#          ^ punctuation.section.parameters.end.gdscript
+signal foo(bar, baz)
+#          ^^^ variable.parameter.gdscript
+#             ^ punctuation.separator.parameters.gdscript
+signal foo \
+(foo,bar)
+# < meta.signal.parameters.gdscript
+
+@onready @export_range("Asdasd") var myname: String = "name" 
 
 @warning_ignore("integer_division")
 
+# Valid
 $Object1234/node2
-
 %Object1234
+$/Root/%path
+$"../Root"
+$%Root
+$/%Root
 
-func state(username:String = "parameter", ) -> void:
+# Invalid
+%$Root
+%/Root/%path
+
+&"String name"
+^"Node/Path"
+
+func aaaa(: pass
+
+func aaaa:()
+func aaaa() dadf adf
+func aaaa() -> dadfa: pass
+
+## Documentation comment 
+func state(foo, with_type: int, with_type2: Vector2, with_default = "Foo", with_both: String = "parameter", asdf) -> void:
     pass
+
+class_name Weeeee
+extends Node3D
+extends "res://path/to/character.gd"
+extends "res://path/to/character.gd".Foobar
+
+function_call(asdf(), asdf, "")
+self.bar.function_call(asdf(), asdf[5], self.foo(), "")
+
+func function(hello = asdf(), asdf : = "", ...foo):
+    pass
+
+@onready var foobar = xyz()
+var foobar
+static var foobar
+static var foobar = 123 as String
+static var foobar = [123] as Array[int]
+
+var foo: Array[int]
+var foo: Dictionary[String, Bar]
+var foo := 123
+
+var foobar: int
+var foobar: Foobar = 123
+
+var foobar:
+    set: pass
+    get: return 1
+
+var foo ; var bar: = 123
+
+
+var 123
+var $
+var @
+
+await signal
+breakpoint
+assert(asdf,"")
+
+if x is not Y:
+    pass
+elif y is X:
+    pass
+else:
+    pass
+
+var milliseconds: int = 0
+var seconds: int:
+    get:
+        return milliseconds / 1000
+    set(value):
+        milliseconds = value * 1000
+
+var seconds: int:
+    get = get_seconds, set = set_seconds
+
+call_with_lambda(func(asdf): pass)
+
+const FOO = 123
+const FOO: int = 123
+
+enum Foobar {
+    FOO = 123,
+    BLAH,
+    BEZ = foo()
+}
+
+match x:
+    {}:
+        print("Empty dict")
+    {"name": "Dennis"}:
+        print("The name is Dennis")
+    {"name": "Dennis", "age": var age}:
+        print("Dennis is ", age, " years old.")
+    {"name", "age"}:
+        print("Has a name and an age, but it's not Dennis :(")
+    {"key": "godotisawesome", ..}:
+        print("I only checked for one entry and ignored the rest")
+
+match x:
+    1, 2, 3:
+        print("It's 1 - 3")
+    "Sword", "Splash potion", "Fist":
+        print("Yep, you've taken damage")
+    var new_var:
+        print("It's not 1 or 2, it's ", new_var)
+
+match point:
+    [0, 0]:
+        print("Origin")
+    [_, 0]:
+        print("Point on X-axis")
+    [0, _]:
+        print("Point on Y-axis")
+    [var x, var y] when y == x:
+        print("Point on line y = x")
+    [var x, var y] when y == -x:
+        print("Point on line y = -x")
+    [var x, var y]:
+        print("Point (%s, %s)" % [x, y])
+
+@abstract class Shape:
+    @abstract func draw()
+
+class Circle extends Shape:
+    func draw():
+        print("Drawing a circle.")
+
+class Square extends Shape:
+    func draw():
+        super()
+        print("Drawing a square.")
